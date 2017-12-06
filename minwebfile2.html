@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+  <script>
+    // aux = [{artistID:"52",weight:"1000"},{artistID:"1042",weight:"900"},{artistID:"13222",weight:"800"},{artistID:"2234",weight:"700"},
+    //        {artistID:"102",weight:"600"},{artistID:"524",weight:"500"},{artistID:"5343",weight:"450"},{artistID:"5128",weight:"400"},
+    //        {artistID:"156",weight:"300"},{artistID:"444",weight:"250"},{artistID:"9654",weight:"200"},{artistID:"9976",weight:"150"}]
+    user=[{artistID:"51",weight:"1000"},{artistID:"52",weight:"900"},{artistID:"53",weight:"800"},{artistID:"54",weight:"750"},{artistID:"55",weight:"700"},{artistID:"56",weight:"650"}];
+    mostClassifiedAs=[];
+    userDataBase=[];
+    d3.csv("classification_artists.csv",function(data2){
+      mostClassifiedAs=data2;
+      //console.log(mostClassifiedAs);
+      d3.tsv("minwebfile.tsv",function(data){
+        data=data.filter(function(d){return mostClassifiedAs.filter(function(o){return o.artistID==d.artistID}).length>0})
+        data.forEach(function(d){
+          d.tagID=mostClassifiedAs.filter(function(o){return o.artistID==d.artistID})[0].tagID;
+        })
+        data.sort(function(a, b) {
+          return Number(a.tagID) - Number(b.tagID);
+        })
+        data.sort(function(a, b) {
+          return Number(a.userID) - Number(b.userID);
+        })
+        //console.log(data);
+        var ifor=0,jfor=0;
+        for(ifor=0;ifor<data.length;ifor=jfor){
+          for(jfor=ifor+1;jfor<data.length;jfor++){
+            if((data[ifor].userID!=data[jfor].userID) || (data[ifor].tagID!=data[jfor].tagID))break;
+            if(data[ifor].tagID==data[jfor].tagID){
+              x=Number(data[ifor].weight);
+              x+=Number(data[jfor].weight);
+              data[ifor].weight=x;
+            }
+          }
+        }
+        data = data.filter(function(d){
+          return Number.isInteger(d.weight);
+        })
+        data.sort(function(a, b) {
+          return Number(a.weight) - Number(b.weight);
+        }).reverse()
+        data.sort(function(a, b) {
+          return Number(a.userID) - Number(b.userID);
+        })
+        uid="";
+        div=1;
+        for(i=0;i<data.length;i++){
+          if(data[i].userID!=uid){
+            uid = data[i].userID
+            div = Number(data[i].weight)
+          }
+          data[i].weight/=div;
+        }
+        data.forEach(function(d){
+          delete d.artistID
+        })
+        console.log(data);
+        actualUser=""
+        auxiliar=[]
+        data.forEach(function(d){
+          if(d.userID!=actualUser){
+            if(auxiliar.length>0)userDataBase.push(auxiliar)
+            actualUser=d.userID;
+            auxiliar=[]
+            auxiliar.push(actualUser)
+          }
+          auxiliar.push(d.tagID,d.weight)
+        })
+        console.log(userDataBase);
+        //console.log(convertNewUserToFormat(user));
+        console.log(getClosestUser(user));
+        //userDataBase=data;
+        // var allData = crossfilter(data);
+        // allDataByArtist = allData.dimension(function(d) { return Number(d.artistID); });
+        // allDataByUserId = allData.dimension(function(d) { return Number(d.userID); });
+        // allDataByArtistGroup = allDataByArtist.group();
+        // allDataByUserIdGroup = allDataByUserId.group()
+        // //console.log(allDataByArtistGroup.top(20));
+        // //console.log(allDataByUserIdGroup.top(10));
+        // //console.log(allDataByArtist.top(50));
+        // newData=[];
+        // aux.forEach(function(d){
+        //   // data.filter(function(o){return o.artistID==d.artistID}).forEach(function(obj){
+        //   //   newData.push(obj);
+        //   // })
+        //   newData.push(data.filter(function(o){return o.artistID==d.artistID}));
+        // });
+        // newData.forEach(function(d){
+        //   d.sort(function(a, b) {
+        //     return Number(a.weight) - Number(b.weight);
+        //   }).reverse()
+        // })
+        // console.log(newData);
+        // console.log(newData.reverse());
+
+      })
+
+    })
+
+    //mostClassifiedAs = []
+    //usado com o user_taggedartists.dat para gerar o classification_artists.csv
+    // d3.tsv("user_taggedartists.tsv",function(data){
+    //   var allData = crossfilter(data);
+    //   allDataByArtist = allData.dimension(function(d) { return Number(d.artistID); });
+    //   allDataByTagId = allData.dimension(function(d) { return Number(d.tagID); });
+    //   allDataByArtistGroup = allDataByArtist.group();
+    //   allDataByTagIdGroup = allDataByTagId.group()
+      //console.log(allDataByArtistGroup.top(20));
+      //console.log(allDataByUserIdGroup.top(10));
+      //console.log(allDataByArtist.top(Infinity).reverse());
+      // keys = []
+      // allDataByTagIdGroup.all().filter(function(d){return d.value>100}).forEach(function(o){keys.push(o.key)})
+      // console.log(keys);
+      // allArtist = allDataByArtist.top(Infinity).reverse();
+      // allArtist = allArtist.filter(function(d){return keys.indexOf(Number(d.tagID))!=-1})
+      // i=allArtist.length;
+      // while(i>0){
+      //   k=allArtist.filter(function(d){return Number(d.artistID)==Number(allArtist[0].artistID)})
+      //   var lessData = crossfilter(k)
+      //   tags = lessData.dimension(function(d) { return Number(d.tagID); });
+      //   tagsGroup = tags.group();
+      //   mostClassifiedAs.push([allArtist[0].artistID,tagsGroup.top(1)[0].key])
+      //   i-=k.length;
+      //   allArtist = allArtist.slice(k.length,allArtist.length)
+      //   console.log(i);
+      // }
+      // console.log(mostClassifiedAs);
+      // toCSV=[['artistID','tagID']]
+      // mostClassifiedAs.forEach(function(d){
+      //   toCSV.push(d);
+      // })
+      // exportToCsv('classification_artists.csv',
+      // 	toCSV
+      // )
+    //})
+
+    // function exportToCsv(filename, rows) {
+    //     var processRow = function (row) {
+    //         var finalVal = '';
+    //         for (var j = 0; j < row.length; j++) {
+    //             var innerValue = row[j] === null ? '' : row[j].toString();
+    //             if (row[j] instanceof Date) {
+    //                 innerValue = row[j].toLocaleString();
+    //             };
+    //             var result = innerValue.replace(/"/g, '""');
+    //             if (result.search(/("|,|\n)/g) >= 0)
+    //                 result = '"' + result + '"';
+    //             if (j > 0)
+    //                 finalVal += ',';
+    //             finalVal += result;
+    //         }
+    //         return finalVal + '\n';
+    //     };
+    //
+    //     var csvFile = '';
+    //     for (var i = 0; i < rows.length; i++) {
+    //         csvFile += processRow(rows[i]);
+    //     }
+    //
+    //     var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    //     if (navigator.msSaveBlob) { // IE 10+
+    //         navigator.msSaveBlob(blob, filename);
+    //     } else {
+    //         var link = document.createElement("a");
+    //         if (link.download !== undefined) { // feature detection
+    //             // Browsers that support HTML5 download attribute
+    //             var url = URL.createObjectURL(blob);
+    //             link.setAttribute("href", url);
+    //             link.setAttribute("download", filename);
+    //             link.style.visibility = 'hidden';
+    //             document.body.appendChild(link);
+    //             link.click();
+    //             document.body.removeChild(link);
+    //         }
+    //     }
+    // }
+    function getClassification(artist){
+      return mostClassifiedAs.filter(function(d){return d.artistID==artist})[0].tagID;
+    }
+    function convertNewUserToFormat(user){
+      maxWeigth=0;
+      user.forEach(function(d){
+        d.tagID=getClassification(d.artistID);
+        delete d.artistID;
+        if(Number(d.weight)>maxWeigth)maxWeigth=Number(d.weight);
+      })
+      user.map(function(d){return {tagID:d.tagID,weight:d.weight/=maxWeigth}})
+      user.sort(function(a, b) {
+        return Number(a.tagID) - Number(b.tagID);
+      })
+      var ifor,jfor;
+      for(ifor=0;ifor<user.length;ifor=jfor){
+        for(jfor=ifor+1;jfor<user.length;jfor++){
+          if(user[ifor].tagID!=user[jfor].tagID)break;
+          if(user[ifor].tagID==user[jfor].tagID){
+            x=Number(user[ifor].weight);
+            x+=Number(user[jfor].weight);
+            user[ifor].weight=x;
+            user[jfor].weight="nan";
+          }
+        }
+      }
+      user = user.filter(function(d){
+        return d.weight!="nan";
+      })
+      user.sort(function(a, b) {
+        return Number(a.weight) - Number(b.weight);
+      }).reverse();
+      maxWeigth=user[0].weight;
+      user.map(function(d){return {tagID:d.tagID,weight:d.weight/=maxWeigth}})
+      return user
+    }
+    function getClosestUser(newUser){
+      newUser=convertNewUserToFormat(newUser)
+      console.log(newUser);
+      weightForUsers=[];
+      currentWeigth=0;
+      flag=false;
+      for (i = 0; i < userDataBase.length; i++) {
+        currentWeigth=0;
+        for (j = 0; j < newUser.length; j++) {
+          if(userDataBase[i].indexOf(newUser[j].tagID)>0){
+            currentWeigth+=(1/(1+(Math.pow(Math.abs(userDataBase[i][userDataBase[i].indexOf(newUser[j].tagID)+1]-newUser[j].weight),3))));
+          }
+        }
+        if(currentWeigth>0){
+          weightForUsers.push([userDataBase[i][0],Math.sqrt(currentWeigth)])
+        }
+      }
+      weightForUsers.sort(function(a, b) {
+          return a[1] > b[1] ? 1 : -1;
+      }).reverse();
+      return weightForUsers[0];
+    }
+  </script>
+</body>
+</html>
